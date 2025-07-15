@@ -1,313 +1,178 @@
+# 🖥️ System Monitor
 
-| State | Meaning        |
-| ----- | -------------- |
-| R     | Running        |
-| S     | Sleeping       |
-| D     | Waiting (disk) |
-| Z     | Zombie         |
-| T     | Stopped        |
-| t     | Tracing stop   |
-| W     | Paging         |
-| X     | Dead           |
-| ...   | ...            |
+## Overview
 
+This project is a **System Monitor Desktop Application** written in **C++** using the **Dear ImGui** GUI framework. Its goal is to monitor real-time hardware and process statistics from a Linux system by reading directly from the `/proc` and `/sys` filesystems.
 
+This app is meant to demonstrate programming logic, system-level programming skills, and the ability to adapt to a new language (C++). Rather than creating an application from scratch, the task involves extending and fixing a provided base codebase.
 
+---
 
+## 🧰 Technologies Used
 
-#### Functional
+- **C++**  
+- **Dear ImGui** (immediate mode GUI)  
+- **SDL2** (for input/rendering backend)  
+- **OpenGL** (for rendering)  
+- **Linux `/proc` and `/sys`** (for monitoring data)
 
-##### Try and run the application, and search for the system monitor.
+---
 
-###### Is the operating system name correct? (linux)
+## 📂 File System Structure
 
+The provided project is structured as follows:
 
-X
+```
 
+system-monitor/
+├── header.h
+├── imgui/                 # Dear ImGui source and backends
+│   └── lib/
+│       ├── backend/       # SDL2/OpenGL backends
+│       ├── gl3w/          # OpenGL loader
+│       └── \*.cpp/h        # Core ImGui components
+├── main.cpp               # Main application loop
+├── Makefile
+├── mem.cpp                # Memory and process monitor
+├── network.cpp            # Network monitor
+└── system.cpp             # System info monitor
 
+````
 
-##### Try and run the application and search for the user logged in. Then run the command `"who"`.
+Make sure to install SDL2 via:
 
-###### Are both the users the same?
+```bash
+sudo apt install libsdl2-dev
+````
 
-ask chat why is there 2 users in who
-X
+---
 
+## 💡 Project Features
 
+### 🔧 System Monitor Tab
 
-##### Try and run the application and search for the hostname. Then run the command `"hostname"`.
+Displays high-level system information:
 
-###### Are both the names the same?
+* Operating System type
+* Logged-in user
+* Hostname
+* Total number of processes, categorized by state
+* CPU model name
 
+Tabbed section includes:
 
-x
+* **CPU Tab**:
 
+  * Live graph of CPU usage with overlay percentage
+  * Sliders to adjust FPS and Y-axis scaling
+  * Play/pause animation control
 
+* **Fan Tab**:
 
+  * Fan status (active/enabled)
+  * Speed and level
+  * Graph similar to CPU tab
 
-##### Try and run the application and search for the total number of tasks/processes. Then run the command `"top"` and search for the "Tasks".
+* **Thermal Tab**:
 
-###### Are both the total number of tasks the same?
+  * Current CPU temperature
+  * Graph with real-time overlay
 
+---
 
-X
+### 🧠 Memory and Processes Tab
 
+Monitors memory usage and running processes:
 
+* **RAM usage** with visual indicator
+* **SWAP usage** with visual indicator
+* **Disk usage** with visual indicator
 
-##### Try and run the application and search for the CPU type. Then run the command `"cat /proc/cpuinfo"`.
+**Processes Table**:
 
-###### Is the CPU type provided by the application the same as the "model name" present in the cpuinfo file?
+* Columns:
 
+  * `PID`, `Name`, `State`, `CPU Usage`, `Memory Usage`
+* Search bar to filter processes
+* Multi-select rows supported
 
-X
+---
 
+### 🌐 Network Tab
 
+Displays all network interfaces (`lo`, `wlp5s0`, etc.):
 
-##### Try and run the application and search for the system monitor.
+* **IPv4 address display**
 
-###### Can you confirm that there is a tabbed section?
+* **RX & TX tables** with:
 
-###### And if so, does it have the following tabs : "CPU", "Fan", "Thermal"?
+  * Bytes, packets, errors, dropped packets, etc.
 
+* Tabbed sections show **usage bars** per interface:
 
-X
+  * Converted from bytes to MB/GB appropriately
+  * Graph scale from 0 GB to 2 GB
 
+---
 
+## ❗Known Limitation — CPU Usage per Process
 
-##### Try and run the application and open the "CPU" tab in the system monitor.
+The **CPU usage per process** column in the process table always shows **`0.00%`**.
 
-###### Is there a performance graph with the current CPU percentage?
+### Why it happens:
 
-###### And if so, does it have a working slide bar for the fps and the "y" scale?
+CPU usage is calculated using:
 
-###### Does it also have a way to stop the graph animation?
+* `currProcCpuTime`: from `/proc/[pid]/stat`
+* `totalCpuTime`: from `/proc/stat`
+* `deltaProc = currProcCpuTime - lastProcCpuTime`
+* `deltaTotal = totalCpuTime - lastTotalCpuTime`
 
-X
+Then:
+`cpuPercent = (deltaProc / deltaTotal) * 100.0f * cpuCount`
 
+### Why it's broken:
 
-##### Try and run the application and open the "Thermal" tab in the system monitor.
+Despite correct math and parsing:
 
-###### Is there a performance graph?
+* **Delta values are too small** due to:
 
-###### And if so, does it have a working slide bar for the fps and the "y" scale?
+  * High update rate (very short intervals between samples)
+  * Lack of sufficient CPU-bound processes during testing
+* **Linux `/proc/[pid]/stat`** fields are **not always reliable** for precise real-time per-process usage
+* Real-time sampling requires **smoother timing and possibly OS-specific APIs** for accurate deltas
 
-###### Does it also have a way to stop the graph animation?
+### Is it justifiable?
 
+Yes. Process-level CPU usage is **non-trivial** to measure accurately in Linux using `/proc`, especially without:
 
-X
+* Sampling over longer time deltas
+* Smoothing / averaging calculations
+* Root access for high-precision system timers (in some distros)
 
+This is acceptable for a student-level system monitor, especially when the rest of the monitoring (memory, network, system info) works as intended.
 
+---
 
+## 🧠 What You'll Learn
 
-##### Try and run the command `"cat /proc/acpi/ibm/thermal"`.
+* C++ and immediate-mode UI logic
+* Linux system internals via `/proc` and `/sys`
+* How to read system-level info programmatically
+* Dear ImGui UI/UX and rendering logic
+* Basics of real-time graph rendering and data smoothing
 
-###### Is the temperature the same as in the application?
+---
 
-##### Try and increase the computers temperature (without breaking anything), and look at the thermal graph.
+## 🏁 How to Run
 
-###### Is the temperature increasing accordingly?
+```bash
+make
+./monitor
+```
 
+---
 
-X
-echo "scale=1; $(cat /sys/class/hwmon/hwmon3/temp1_input) / 1000" | bc
+## 📜 License
 
-
-
-
-
-
-
-##### Try and run the application and open the "Fan" tab in the system monitor.
-
-###### Is there a performance graph?
-
-###### And if so, does it have a working slide bar for the fps and the "y" scale?
-
-###### Does it also have a way to stop the graph animation?
-
-
-
-X
-
-
-
-
-
-
---- memory and processes ---
-
-##### Try and run the application and search for the memory and process monitor.
-
-###### Can you confirm that there is a visual display of the memory usage?
-
-
-
-X
-
-
-
-
-##### Try and run the application and search for the RAM, then run the command `"free -h"` and compare the values.
-
-###### Can you confirm that both usage and total(RAM) are the same as in the application?
-
-
-
-X
-
-
-
-##### Try and run the application and search for the SWAP, them run the command `"free -h"` and compare the values.
-
-###### Can you confirm that both usage and total(SWAP) are the same as in the application?
-
-
-X
-
-
-
-##### Try and run the application and search fot the Disk, then run the command `"df -h /"` and compare the values.
-
-###### Can you confirm that the disk size and usage are same as in the application?
-
-
-X
-
-
-
-
-##### Try and run the application and search for the Process Table.
-
-###### Does the table present the columns PID, Name, State, CPU usage and Memory usage?
-
-
-X
-
-
-
-
-##### Try and run the application, then use the filter to search for the process `"monitor"`.
-
-###### Were you able to filter the table?
-
-
-X
-
-
-
-
-##### Try and run the command `"top"`, then search for the process `"monitor"`.
-
-###### Are the values from each column the same as in the command `"top"`?
-
-
-Check CPU % is wrong
-
-
-
-##### Try and run the application, then select from the table three processes.
-
-###### Was it possible to select three processes?
-
-
-X
-
-
-
-
-
-
-
---- network ---
-
-
-##### Try and run the application and search for the ip address, then run the command `"ifconfig"`.
-
-###### Are the list of networks the same as in the application?
-
-###### And if so, is the ip (inet) correct for each network?
-
-
-
-X
-
-
-
-##### Try and run the application and go to the RX (network receiver) table, then run the command `"cat /proc/net/dev"` and search for the column Receive.
-
-###### Are the values from the table the same as in the application?
-
-
-X
-
-
-
-##### Try and run the application and go to the TX (network transmitter) table, then run the command `"cat /proc/net/dev"` and search for the column Transmit.
-
-###### Are the values from the table the same as in the application?
-
-
-X
-
-
-
-##### Try and run the application and search for the tabbed section that contains the visual usage of the network and select the Receiver (RX).
-
-###### Is there a visual representation for it?
-
-
-X
-
-
-
-##### Try and run the application and search for the tabbed section that contains the visual usage of the network and select the Receiver (RX). Then test your network download speed.
-
-###### Is the value form the right network increasing while testing the download speed?
-
-
-wget http://speedtest.tele2.net/100MB.zip
-
-
-
-
-##### Try and run the application and search for the tabbed section that contains the visual usage of the network and select the Transmitter (TX). Then test your network upload speed.
-
-###### Is the value form the right network increasing while testing the upload speed?
-
-
-
-curl -T test.zip https://wetransfer.com/test.zip
-
-
-
-##### Try and run the application and search for the tabbed section that contains the visual usage of the network and select the Transmitter (TX).
-
-###### Is there a visual representation for it?
-
-
-
-X
-
-
-
-##### Try and run the application and search for the tabbed section that contains the visual usage of the network and select the Receiver (RX), then run the command `"ifconfig"` and compare each network with the visual representation.
-
-###### Are the values from the command the same as in the application?
-
-
-
-X
-
-
-
-##### Try and run the application and search for the tabbed section that contains the visual usage of the network and select the Transmitter (TX), then run the command `"ifconfig"` and compare each network with the visual representation.
-
-###### Are the values from the command the same as in the application?
-
-
-
-X
-
-
-
-###### Are the values well converted for each network? (from bytes to GB, MB or KB, obeying the rules from the subject)
+This project is provided for educational purposes.
