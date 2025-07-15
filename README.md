@@ -311,11 +311,3 @@ X
 
 
 ###### Are the values well converted for each network? (from bytes to GB, MB or KB, obeying the rules from the subject)
-
-
-
-
-
-summary:
-check CPU% on Processes
-check Network a bit
